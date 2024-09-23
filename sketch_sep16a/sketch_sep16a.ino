@@ -27,19 +27,19 @@ int irDetect(int irLedPin, int irReceiverPin, long frequency) {
 void moveForward() {
   // Adjust the writeMicroseconds values based on your servo calibration
   servoLeft.writeMicroseconds(1600);    // Move forward (calibrated value)
-  servoRight.writeMicroseconds(1300);   // Move forward (calibrated value)
+  servoRight.writeMicroseconds(1400);   // Move forward (calibrated value)
 }
 
 void turnLeft() {
   servoLeft.writeMicroseconds(1400);    // Stop left wheel
   servoRight.writeMicroseconds(1400);   // Move right wheel forward for turn
-  delay(250);                        // Adjust this delay for 90-degree turn
+  delay(50);                        // Adjust this delay for 90-degree turn
 }
 
 void turnRight() {
   servoLeft.writeMicroseconds( 1600);    // Move left wheel forward for turn
   servoRight.writeMicroseconds( 1600);   // Stop right wheel
-  delay(250);                        // Adjust this delay for 90-degree turn
+  delay(50);                        // Adjust this delay for 90-degree turn
 }
 
 void stopMovement() {
@@ -96,11 +96,13 @@ void loop() {
     digitalWrite(redCenterLedPin, HIGH);  // Turn on center red LED if obstacle detected
     Serial.println("Obstacle detected in front.");
     stopMovement();                       // Stop if obstacle is directly in front
-    if (leftIrVal == 1) {                 // If no obstacle on the left, turn left
+    if (leftIrVal == 1 && rightIrVal == 0) {                 // If no obstacle on the left, turn left
       turnLeft();
-    } else if (rightIrVal == 1) {         // If no obstacle on the right, turn right
+    } else if (rightIrVal == 1 && leftIrVal == 0) {         // If no obstacle on the right, turn right
       turnRight();
     }
+//    else stopMovement();
+    
   } else {
     digitalWrite(redCenterLedPin, LOW);   // Turn off center red LED
   }

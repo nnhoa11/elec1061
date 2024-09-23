@@ -12,9 +12,20 @@ const int redCenterLedPin = A1;
 const int redRightLedPin = A0;
 const int leftServoPin = 13;   // Pin for left servo
 const int rightServoPin = 12;  // Pin for right servo
+int prevLeft = 5;
+int prevRight = 5;
 
 Servo servoLeft, servoRight;
 
+int irDistance(int irLedPin, int irReceiverPin)
+{
+   int distance = 0;
+   for(long f = 38000; f <= 42000; f += 1000)
+   {
+      distance += irDetect(irLedPin, irReceiverPin, f);
+   }
+   return distance;
+}
 // IR Object Detection Function
 int irDetect(int irLedPin, int irReceiverPin, long frequency) {
   tone(irLedPin, frequency);          // Turn on the IR LED square wave
@@ -31,26 +42,23 @@ void moveForward(int leftSpeed, int rightSpeed) {
   servoRight.writeMicroseconds(rightSpeed);  // Adjust right servo speed
 }
 
-void moveBackward() {
-  servoLeft.writeMicroseconds(1300);   // Move backward (calibrated value)
-  servoRight.writeMicroseconds(1600);  // Move backward (calibrated value)
-}
-
 void turnLeft() {
-  servoLeft.writeMicroseconds(1400);   // Stop left wheel
-  servoRight.writeMicroseconds(1600);  // Turn right wheel forward
-  delay(300);                          // Adjust this delay for a smoother 90-degree turn
+  servoLeft.writeMicroseconds(1400);    // Stop left wheel
+  servoRight.writeMicroseconds(1400);   // Move right wheel forward for turn
+  delay(600);                        // Adjust this delay for 90-degree turn
+
 }
 
 void turnRight() {
-  servoLeft.writeMicroseconds(1600);   // Move left wheel forward for turn
-  servoRight.writeMicroseconds(1400);  // Stop right wheel
-  delay(300);                          // Adjust this delay for a smoother 90-degree turn
+  servoLeft.writeMicroseconds( 1600);    // Move left wheel forward for turn
+  servoRight.writeMicroseconds( 1600);   // Stop right wheel
+  delay(600);                        // Adjust this delay for 90-degree turn
+
 }
 
 void stopMovement() {
-  servoLeft.writeMicroseconds(1495);   // Stop left wheel
-  servoRight.writeMicroseconds(1490);  // Stop right wheel
+  servoLeft.writeMicroseconds( 1495);    // Stop left wheel
+  servoRight.writeMicroseconds(1490);   // Stop right wheel
 }
 
 void setup() {
@@ -74,14 +82,17 @@ void setup() {
   Serial.begin(9600);
 
   // 5-second delay before starting
-  // delay(5000);
+  stopMovement();
+  prevLeft = irDistance(leftIrLedPin, leftIrReceiverPin);
+  prevRight = irDistance(rightIrLedPin, rightIrReceiverPin);
+   delay(5000);
 }
 
 void loop() {
   // Read left, center, and right IR sensors (38kHz frequency)
-  int leftIrVal = irDetect(leftIrLedPin, leftIrReceiverPin, 38000);
-  int centerIrVal = irDetect(centerIrLedPin, centerIrReceiverPin, 38000);
-  int rightIrVal = irDetect(rightIrLedPin, rightIrReceiverPin, 38000);
+  int leftIrVal = irDistance(leftIrLedPin, leftIrReceiverPin);
+  int centerIrVal = irDistance(centerIrLedPin, centerIrReceiverPin);
+  int rightIrVal = irDistance(rightIrLedPin, rightIrReceiverPin);
   
   // Sensor output to serial for debugging
   Serial.print("Left: ");
@@ -90,51 +101,51 @@ void loop() {
   Serial.print(centerIrVal);
   Serial.print(" | Right: ");
   Serial.println(rightIrVal);
+  Serial.print("preLeft: ");
+  Serial.print(prevLeft);
+  Serial.print(" | prevRight: ");
+  Serial.println(prevRight);
 
   // Update LED states based on detection
-  digitalWrite(redLeftLedPin, leftIrVal == 0 ? HIGH : LOW);
-  digitalWrite(redCenterLedPin, centerIrVal == 0 ? HIGH : LOW);
-  digitalWrite(redRightLedPin, rightIrVal == 0 ? HIGH : LOW);
+  digitalWrite(redLeftLedPin, leftIrVal < 5 ? HIGH : LOW);
+  digitalWrite(redCenterLedPin, centerIrVal < 5 ? HIGH : LOW);
+  digitalWrite(redRightLedPin, rightIrVal < 5  ? HIGH : LOW);
 
   // Decision logic for movement based on sensor readings
-
-  if (centerIrVal == 0) {
+  if (leftIrVal < 5 && rightIrVal < 5 && centerIrVal < 5){
+    stopMovement();
+    Serial.print('Stopping');
+  }
+  else
+  if (centerIrVal < 5) {
     // Obstacle detected in front, stop and decide on turn
     stopMovement();
     Serial.println("Obstacle in front.");
-
-    if (leftIrVal == 1 && rightIrVal == 0) {
+    if (rightIrVal < 5 && leftIrVal > 4) {
       // If left is open and right is blocked, turn left
       Serial.println("Turning left.");
       turnLeft();
-    } else if (rightIrVal == 1 && leftIrVal == 0) {
+    } else if (leftIrVal < 5 && rightIrVal > 4) {
       // If right is open and left is blocked, turn right
       Serial.println("Turning right.");
       turnRight();
-    } else if (leftIrVal == 1 && rightIrVal == 1) {
-      // Both left and right open, randomly pick a direction or go forward
-      Serial.println("Both sides open, moving forward.");
-      moveForward(1600, 1300);
-    } else {
-      // If no clear path, back up slightly and reassess
-      Serial.println("Backing up.");
-      moveBackward();
-      delay(500);  // Move backward for a short time
     }
-  } else {
+    moveForward(1600, 1400); 
+  } 
+  else {
     // No obstacle in front, correct slight angles based on left/right IR sensors
-    if (leftIrVal == 1 && rightIrVal == 0) {
+    if (prevLeft - leftIrVal < 0) {
       // Slight drift to the left, so turn right slightly
       Serial.println("Correcting right.");
-      moveForward(1550, 1300);  // Slow down left wheel to correct the path
-    } else if (rightIrVal == 1 && leftIrVal == 0) {
+      moveForward(1550, 1400);  // Slow down left wheel to correct the path
+    } else if (prevRight - rightIrVal > 0) {
       // Slight drift to the right, so turn left slightly
       Serial.println("Correcting left.");
-      moveForward(1600, 1350);  // Slow down right wheel to correct the path
+      moveForward(1600, 1450);  // Slow down right wheel to correct the path
     } else {
       // Move forward if both sides are balanced
       Serial.println("Moving forward.");
-      moveForward(1600, 1300);  // Balanced forward movement
+      moveForward(1600, 1400);  // Balanced forward movement
     }
   }
 
