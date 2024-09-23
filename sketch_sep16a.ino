@@ -91,7 +91,7 @@ void loop() {
   } else {
     digitalWrite(redRightLedPin, LOW);    // Turn off right red LED
   }
-int centerIrVal = irDetect(centerIrLedPin, centerIrReceiverPin, 38000);
+  int centerIrVal = irDetect(centerIrLedPin, centerIrReceiverPin, 38000);
   if (centerIrVal == 0) {
     digitalWrite(redCenterLedPin, HIGH);  // Turn on center red LED if obstacle detected
     Serial.println("Obstacle detected in front.");
