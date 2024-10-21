@@ -44,23 +44,22 @@ void moveForward(int leftSpeed, int rightSpeed) {
 
 void turnLeft() {
    
-  servoLeft.writeMicroseconds(1300); 
-  servoRight.writeMicroseconds(1700);
-  delay(190);
+ // servoLeft.writeMicroseconds(1300); 
+  //servoRight.writeMicroseconds(1700);
+//  delay(100);
   servoLeft.writeMicroseconds(1400);    // Stop left wheel
   servoRight.writeMicroseconds(1400);   // Move right wheel forward for turn
-  delay(600);                        // Adjust this delay for 90-degree turn
+  delay(600);                        // Adjust this delay for 90-degree turn (was 600 initially)
 
 }
 
 void turnRight() {
-  servoLeft.writeMicroseconds(1300); 
-  servoRight.writeMicroseconds(1700);
-  delay(100);
+ // servoLeft.writeMicroseconds(1300); 
+ // servoRight.writeMicroseconds(1700);
+ // delay(100);
   servoLeft.writeMicroseconds( 1600);    // Move left wheel forward for turn
   servoRight.writeMicroseconds( 1600);   // Stop right wheel
-  delay(600);                        // Adjust this delay for 90-degree turn
-
+  delay(600);                        // Adjust this delay for 90-degree turn (was 600 initially)
 }
 
 void stopMovement() {
@@ -92,7 +91,7 @@ void setup() {
   stopMovement();
   prevLeft = irDistance(leftIrLedPin, leftIrReceiverPin);
   prevRight = irDistance(rightIrLedPin, rightIrReceiverPin);
-   delay(5000);
+ //  delay(5000);
 }
 
 void loop() {
@@ -123,42 +122,94 @@ void loop() {
     stopMovement();
     Serial.print('Stopping');
   }
-  else
-  if (centerIrVal < 5) {
-    // Obstacle detected in front, stop and decide on turn
-    stopMovement();
-    Serial.println("Obstacle in front.");
-    if (rightIrVal < 5 && leftIrVal > 4) {
-      // If left is open and right is blocked, turn left
-      Serial.println("Turning left.");
-      turnLeft();
-    moveForward(1700, 1300); 
-
-    } else if (leftIrVal < 5 && rightIrVal > 4) {
-      // If right is open and left is blocked, turn right
-      Serial.println("Turning right.");
-      turnRight();
-    moveForward(1700, 1300); 
-
+  else 
+  {
+    if (centerIrVal < 5){
+        stopMovement();
+        if (rightIrVal > 4 && leftIrVal < 5){
+          turnRight();
+          stopMovement();
+          moveForward(1700, 1300);
+        }
+        else
+        if (rightIrVal < 5 && leftIrVal > 4){
+          turnLeft();
+          stopMovement();
+          moveForward(1700, 1300);
+        }
+        else {
+     
+          moveForward(1300, 1500);
+      }
     }
-    
-  } 
-  else {
-    // No obstacle in front, correct slight angles based on left/right IR sensors
-    if (rightIrVal <= 2) {
-      // Slight drift to the left, so turn right slightly
-      Serial.println("Correcting right.");
-      moveForward(1550, 1300);  // Slow down left wheel to correct the path
-    } else if ( leftIrVal <= 2) {
-      // Slight drift to the right, so turn left slightly
-      Serial.println("Correcting left.");
-      moveForward(1700, 1450);  // Slow down right wheel to correct the path
-    } else {
-      // Move forward if both sides are balanced
-      Serial.println("Moving forward.");
-      moveForward(1600, 1400);  // Balanced forward movement
+    else {
+       if (leftIrVal <= 2) {
+          stopMovement();
+          moveForward(1700, 1490);
+          delay(100);
+          stopMovement();
+        }
+        else if (rightIrVal <= 2) { 
+          stopMovement();
+          moveForward(1490, 1300);
+          delay(100);
+          stopMovement();
+        }
+        moveForward(1700,1300);
     }
   }
+//  if (centerIrVal < 5) {
+//    // Obstacle detected in front, stop and decide on turn
+//    stopMovement();
+//    Serial.println("Obstacle in front.");
+//    if (rightIrVal < 5 && leftIrVal > 4) {
+//      // If left is open and right is blocked, turn left
+//      Serial.println("Turning left.");
+//      turnLeft();
+//    moveForward(1700, 1300); 
+//
+//    } else if (leftIrVal < 5 && rightIrVal > 4) {
+//      // If right is open and left is blocked, turn right
+//      Serial.println("Turning right.");
+//      turnRight();
+//    moveForward(1700, 1300); 
+//
+//    }
+//    else if (leftIrVal > 4 && rightIrVal > 4) {
+//  
+//      servoLeft.writeMicroseconds(1600);    // Stop left wheel
+//  servoRight.writeMicroseconds(1600);
+//    }
+//    
+//  } 
+//  else {
+//    // No obstacle in front, correct slight angles based on left/right IR sensors
+//    if (rightIrVal <= 1) {
+//          stopMovement();
+//          servoLeft.writeMicroseconds(1400);    // Stop left wheel
+//  servoRight.writeMicroseconds(1400);
+//      delay(50);
+//          moveForward(1700,1300);
+//      // Slight drift to the left, so turn right slightly
+//      Serial.println("Correcting right.");
+//  //    moveForward(1550, 1300);  // Slow down left wheel to correct the path
+//    } else if ( leftIrVal <= 1) {
+//          stopMovement();
+//            servoLeft.writeMicroseconds( 1600);    // Move left wheel forward for turn
+//  servoRight.writeMicroseconds( 1600);
+//          delay(50);
+//          moveForward(1700,1300);
+//  
+//      // Slight drift to the right, so turn left slightly
+//      Serial.println("Correcting left.");
+//  //    moveForward(1700, 1450);  // Slow down right wheel to correct the path
+//    } else {
+//          stopMovement();
+//      // Move forward if both sides are balanced
+//      Serial.println("Moving forward.");
+//      moveForward(1600, 1400);  // Balanced forward movement
+//    }
+//  }
 
   delay(100);  // Delay to avoid rapid sensor reading fluctuations
 }
